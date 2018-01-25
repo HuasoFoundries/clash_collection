@@ -1,0 +1,35 @@
+{
+  "restartable": "rs",
+  "ignore": [
+    ".git",
+    "node_modules/**/node_modules",
+    "public",
+    "sessions",
+    "logs",
+    "SQL"
+  ],
+  "verbose": true,
+  "execMap":
+  {
+    "js": "node"
+  },
+  "events":
+  {
+    "restart": "echo -e '\"App restarted due to changes in :\n'$FILENAME'\" '"
+  },
+  "watch": [
+    "app.js",
+    "libs/",
+    "routes/",
+    ".env"
+  ],
+  "env":
+  {
+    "NODE_ENV": "development",
+    "NEW_RELIC_ENABLED": false,
+    "MORGAN": false,
+    "DEBUG": "CR:*",
+    "API_KEY": "<YOUR API KEY>"
+  },
+  "ext": "js json"
+}
