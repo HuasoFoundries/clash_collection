@@ -1,0 +1,33 @@
+<div class="container" id="cards">
+
+    {{#each cards}}
+        <div class="row {{this.tournament}}">
+
+            <div class="col s3">
+                <img src="{{this.icon}}" style="width:80px;height:100px;">
+            </div>
+            <div class="col s5">
+                <h6 class= {{this.tournament}}>{{this.name}}</h6>
+                <li>rarity:
+                    <span class="{{this.rarity}}">{{this.rarity}}</span>
+                </li>
+                <li>elixir:
+                    <b>{{this.elixir}}</b>
+                </li>
+                <li>type: {{this.type}}
+                </li>
+            </div>
+            <div class="col s4">
+                <li>level:
+                    <b>{{this.level}}</b>
+                </li>
+                <li>required_for_upgrade:
+                    <b>{{this.required_for_upgrade}}</b>
+                </li>
+                <li class= {{this.tournament}}>{{this.comment}}</li>
+
+            </div>
+        </div>
+
+    {{/each}}
+</div>

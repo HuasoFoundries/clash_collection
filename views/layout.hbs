@@ -1,10 +1,25 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>{{title}}</title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
-  </head>
-  <body>
-    {{{body}}}
-  </body>
+
+    <head>
+        <title>{{title}}</title>
+        <link rel='stylesheet' href='/stylesheets/style.css' />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    </head>
+
+    <body>
+        {{{body}}}
+        <script>
+        jQuery(document).ready(function () {
+        	jQuery('.row.above').each(function () {
+        		jQuery(this).prependTo('#cards');
+        	});
+        	jQuery('.row.below').each(function () {
+        		jQuery(this).appendTo('#cards');
+        	});
+        });
+        </script>
+    </body>
+
 </html>
