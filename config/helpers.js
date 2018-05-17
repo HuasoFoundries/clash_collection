@@ -187,21 +187,6 @@ const Helpers = {
     return niceString;
   },
 
-  cleanCSVRecord: function (record) {
-
-    var conteo = {};
-    let result = _.reduce(record, function (accum, value, key) {
-      var timmedkey = key.trim();
-      if (accum[timmedkey]) {
-        conteo[timmedkey] = conteo[timmedkey] || 0;
-        timmedkey = timmedkey + '_' + (++conteo[timmedkey]);
-      }
-      accum[timmedkey] = value;
-      return accum;
-    }, {});
-    //debug(conteo);
-    return result;
-  },
 
   cleanOldFiles: async function (folder) {
     let files = await fs.readdirAsync(folder),
