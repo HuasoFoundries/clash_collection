@@ -9,22 +9,16 @@ const env = process.env; // eslint-disable-line no-process-env
 
 const Config = {
   DEBUG_PREFIX: env.DEBUG_PREFIX,
-  JWT_SECRET_KEY: env.JWT_SECRET_KEY,
-  DOMAIN: env.DOMAIN,
-  INSTAHUB_AUTH_URL: env.INSTAHUB_AUTH_URL,
-  BACKEND_FILEPARSER: env.BACKEND_FILEPARSER,
+  ROYALE_AUTH: env.ROYALE_AUTH,
+  CLAN_TAG: env.CLAN_TAG,
   session_opts: {
-    secret: 'judicandus sausabru',
+    secret: env.SESSION_SECRET,
     saveUninitialized: true,
-    //store: ,
-    //name: cookie_name,
-    //store: sessionStore, // connect-mongo session store
     proxy: true,
     resave: false,
     cookie: {
       //maxAge: 7200 * 1000,
-      httpOnly: false,
-      domain: '.' + env.DOMAIN
+      httpOnly: false
     }
   },
   filestore_options: {

@@ -6,55 +6,99 @@
 var _ = require('lodash'),
     Config = require(`${__dirname}/config/config.js`),
     path = require('path'),
+    chalk = require('chalk'),
     this_script = path.basename(__filename, path.extname(__filename)),
     debug = require('debug')(`${Config.DEBUG_PREFIX}:${this_script}`),
     Promise = require('bluebird'),
     fs = Promise.promisifyAll(require("fs")),
     Helpers = require(`${__dirname}/config/helpers.js`),
     logger = Helpers.createLogger(this_script),
-    fetch = require('node-fetch');
+    fetch = require('node-fetch'),
+    starting_time = Date.now(),
+    excluded_fields = ['arena', 'mode', 'challengeType', 'winCountBefore', 'deckType'];
 
 
 async function getBattlesFromAPI() {
 
-    let interval = setInterval(() => {
-        debug('waiting for API response');
-    }, 1000);
+    let t_ini = Date.now(),
+        interval = setInterval(() => {
+            debug('waiting for API response');
+        }, 1000);
 
-    const res = await fetch('https://api.royaleapi.com/clan/88VLLOJJ/battles?type=all', {
+    const res = await fetch(`https://api.royaleapi.com/clan/${Config.CLAN_TAG}/battles?type=all&exclude=${excluded_fields.join(',')}`, {
         method: 'GET',
         headers: {
-            'auth': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MzY2LCJpZGVuIjoiNDAxNDQwOTQ3NzkzMTY2MzM2IiwibWQiOnt9fQ.Ig7Rd_zovu4U0hGOIzXic5Pwy-xoHL3vNpBMqIs1M0M' // eslint-disable-line
+            'auth': Config.ROYALE_AUTH // eslint-disable-line
         },
     });
+    let time_until_reset = Math.abs(Helpers.getTimeInSeconds(res.headers.get('x-ratelimit-reset')));
+    debug(`API ${chalk.green('request limit')} is ${chalk.red(res.headers.get('x-ratelimit-limit'))} requests/second`);
+    debug(`${chalk.red(res.headers.get('x-ratelimit-remaining'))} ${chalk.green('remaining requests')} for the next ${chalk.red(time_until_reset)} seconds`); // eslint-disable-line
+
+    clearInterval(interval);
     const battles_raw = await res.json();
+
+
+    let total_time = Helpers.getTimeInSeconds(t_ini);
 
     await fs.writeFileAsync(`${__dirname}/dumps/battles_raw.json`, JSON.stringify(battles_raw, null, 4), 'utf-8');
 
-    clearInterval(interval);
+
+    logger.info(`API answer complete in  ${chalk.red(total_time)} seconds`);
+
+
     return battles_raw;
 }
 
-function processBattles(battles_raw) {
+async function cleanBattles(battles_raw) {
 
-    const battles_without_deck = _.map(battles_raw, (battle) => {
-        battle.team = _.map(battle.team, (team) => {
-            team.clan = _.omit(team.clan, ['badge']);
-            team.clantag = team.clan.tag;
-            return _.omit(team, ['deck', 'deckLink', 'crownsEarned', 'startTrophies', 'clan']);
+    const war_battles = _.chain(battles_raw).filter((battle) => {
+        return (battle.type === 'clanWarCollectionDay' || battle.type === 'clanWarWarDay');
+    }).map((battle) => {
+        battle.team = _.map(battle.team, (player) => {
+            return _.omit(player, ['deck', 'deckLink']);
+        });
+        battle.opponent = _.map(battle.opponent, (player) => {
+            return _.omit(player, ['deck', 'deckLink']);
+        });
+        return battle;
+    }).value();
+
+    await fs.writeFileAsync(`${__dirname}/dumps/war_battles.json`, JSON.stringify(war_battles, null, 4), 'utf-8');
+
+    let clean_battles = _.map(war_battles, (battle) => {
+        battle.team = _.map(battle.team, (player) => {
+            player.clan = _.omit(player.clan, ['badge']);
+            player.clan_tag = player.clan.tag;
+            player.clan_name = player.clan.name;
+            return _.omit(player, ['deck', 'deckLink', 'clan']);
+        });
+        battle.opponent = _.map(battle.opponent, (player) => {
+            player.clan = _.omit(player.clan, ['badge']);
+            player.clan_tag = player.clan.tag;
+            player.clan_name = player.clan.name;
+            return _.omit(player, ['deck', 'deckLink', 'clan']);
         });
 
 
-        return _.omit(battle, ['opponent', 'arena', 'mode', 'challengeType', 'winCountBefore']);
+        return battle;
     });
+
+
+    await fs.writeFileAsync(`${__dirname}/dumps/clean_battles.json`, JSON.stringify(clean_battles, null, 4), 'utf-8');
+    return clean_battles;
+
+}
+
+function processBattles(clean_battles) {
+
 
     const CollectionDay = [];
     const WarDay = [];
 
-    _.chain(battles_without_deck)
+    _.chain(clean_battles)
         .filter(function (battle) {
-            return (battle.type === 'clanWarCollectionDay' || battle.type === 'clanWarWarDay') &&
-                battle.team[0].clantag === '88VLL0JJ';
+            return battle.team[0].clan_tag === Config.CLAN_TAG;
         })
         .each((battle) => {
             _.each(battle.team, (player) => {
@@ -63,8 +107,18 @@ function processBattles(battles_raw) {
                     type: battle.type,
                     date: new Date(1000 * battle.utcTime).toISOString().split('.')[0] + 'Z',
                     player_tag: player.tag,
-                    clan_tag: player.clantag,
-                    player_name: player.name
+                    clan_tag: player.clan_tag,
+                    player_name: player.name,
+                    player_trophies: player.startTrophies || null,
+                    winner: battle.winner,
+                    team_crowns: battle.teamCrowns,
+                    opponent_crowns: battle.opponentCrowns,
+                    team_size: battle.teamSize,
+                    opponent: battle.opponent[0].name,
+                    opponent_trophies: battle.opponent[0].startTrophies || null,
+                    opponent2: battle.opponent[1] ? battle.opponent[1].name : null,
+                    opponent2_trophies: battle.opponent[1] ? battle.opponent[1].startTrophies || null : null,
+
                 };
                 if (battle.type === 'clanWarWarDay') {
                     WarDay.push(dataObj);
@@ -85,25 +139,27 @@ function processBattles(battles_raw) {
 async function Main() {
     const battles_raw = await getBattlesFromAPI();
 
+    const clean_battles = await cleanBattles(battles_raw);
+
+
     let {
         CollectionDay,
         WarDay
-    } = processBattles(battles_raw);
+    } = processBattles(clean_battles);
 
-    return Helpers.insertBattles(WarDay, 'war_day', logger)
-        .then(() => {
-            return Helpers.insertBattles(CollectionDay, 'collection_day', logger);
-        }).then(() => {
-            console.log(`will write ${WarDay.length} battles to WarDay.json`);
-            return fs.writeFileAsync(`${__dirname}/dumps/WarDay.json`, JSON.stringify(WarDay, null, 4), 'utf-8');
-        }).then(() => {
-            console.log('wrote file WarDay.json');
-            console.log(`will write ${CollectionDay.length} battles to CollectionDay.json`);
-            return fs.writeFileAsync(`${__dirname}/dumps/CollectionDay.json`, JSON.stringify(CollectionDay, null, 4), 'utf-8');
-        }).then(() => {
-            console.log('wrote file CollectionDay.json');
-            return Helpers.exit();
-        });
+    await Promise.all([
+        Helpers.insertBattles(WarDay, 'war_day', logger),
+        Helpers.insertBattles(CollectionDay, 'collection_day', logger),
+        fs.writeFileAsync(`${__dirname}/dumps/WarDay.json`, JSON.stringify(WarDay, null, 4), 'utf-8'),
+        fs.writeFileAsync(`${__dirname}/dumps/CollectionDay.json`, JSON.stringify(CollectionDay, null, 4), 'utf-8')
+    ]);
+
+    logger.info(`wrote ${WarDay.length} battles to WarDay.json`);
+    logger.info(`wrote ${CollectionDay.length} battles to CollectionDay.json`);
+
+    let total_time = Helpers.getTimeInSeconds(starting_time);
+    logger.info(`${chalk.green(this_script)}  complete in ${chalk.red(total_time)} seconds`);
+    return Helpers.exit();
 }
 
 Main();

@@ -7,6 +7,6 @@ CREATE TABLE public.collection_day
 	player_name text, 
 	clan_tag text ); 
 
-ALTER TABLE public.collection_day OWNER TO write_schema; 
+--ALTER TABLE public.war_day OWNER TO write_schema; 
 COMMENT ON TABLE public.collection_day IS 'batallas collection day';
 ALTER TABLE ONLY public.collection_day ADD CONSTRAINT collection_day_pkey PRIMARY KEY (id); 

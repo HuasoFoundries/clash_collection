@@ -40,6 +40,10 @@ const Helpers = {
     return `${Math.round(used * 100) / 100} MB`;
   },
 
+  getTimeInSeconds: function (starting_time) {
+    return Math.round((Date.now() - starting_time) / 100) / 10;
+  },
+
   insertMembers: async function (members, logger) {
 
 
@@ -105,7 +109,7 @@ const Helpers = {
     return Helpers.db.none(insertQuery)
       .then(function () {
 
-        debug(`inserted ${members.length} records on members`);
+        logger.info(`inserted ${members.length} records on members`);
         return;
       }).catch((err) => {
         debug(`error inserting on ${chalk.yellow.bold('members')}`);
@@ -160,7 +164,7 @@ const Helpers = {
     return Helpers.db.none(insertQuery)
       .then(function () {
 
-        debug(`inserted ${battles.length} records on ${tablename}`);
+        logger.info(`inserted ${battles.length} records on ${tablename}`);
         return;
       }).catch((err) => {
         debug(`error inserting on ${chalk.yellow.bold(tablename)}`);
