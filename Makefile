@@ -21,7 +21,7 @@ update_eslint:
 
 default: install
 .PHONY: default install run fix-permissions  tag version
-.PHONY: build docs
+.PHONY: build docs battles
 
 
 install:
@@ -31,7 +31,10 @@ install:
 fix-permissions:
 	chown  ubuntu:ubuntu . -R
 
- 
+battles:
+	node process_battles.js
+
+
 run:
 	@$$(npm bin)/nodemon	
 
