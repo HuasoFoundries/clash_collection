@@ -1,12 +1,16 @@
 var express = require('express'),
 	router = express.Router(),
-	chalk = require('chalk'),
 	_ = require('lodash'),
 	sqlite = require('sqlite'),
 	Promise = require('bluebird'),
-	rp = require('request-promise'),
-	debug = require('debug')('CR:users'),
-	env = process.env; // eslint-disable-line no-process-env
+	Config = require(`${__dirname}/../config/config.js`),
+	Helpers = require(`${__dirname}/../config/helpers.js`),
+	path = require('path'),
+	chalk = require('chalk'),
+	this_script = path.basename(__filename, path.extname(__filename)),
+	debug = require('debug')(`${Config.DEBUG_PREFIX}:${this_script}`),
+	logger = Helpers.createLogger(this_script),
+	fetch = require('node-fetch');
 
 let dbPromise = sqlite.open('./cards.sqlite3', {
 	Promise,
@@ -30,28 +34,27 @@ router.get('/', function (req, res, next) {
 });
 
 async function getResponse(playertag) {
-	var authOption = {
-			method: 'GET',
-			url: `http://api.cr-api.com/player/${playertag}`,
-			headers: {
-				'cache-control': 'no-cache',
-				auth: env.API_KEY
-			}
+
+	const res = await fetch(`https://api.royaleapi.com/player/${playertag}`, {
+		method: 'GET',
+		headers: {
+			// 'cache-control': 'no-cache',
+			'auth': Config.ROYALE_AUTH // eslint-disable-line
 		},
-		response = await rp(authOption);
-	let typeofres = typeof response,
-		jsonres = typeofres === 'string' ? JSON.parse(response) : response;
-	debug('Type of response is', typeofres);
+	});
+	let time_until_reset = Math.abs(Helpers.getTimeInSeconds(res.headers.get('x-ratelimit-reset')));
+	debug(`API ${chalk.green('request limit')} is ${chalk.red(res.headers.get('x-ratelimit-limit'))} requests/second`);
+	debug(`${chalk.red(res.headers.get('x-ratelimit-remaining'))} ${chalk.green('remaining requests')} for the next ${chalk.red(time_until_reset)} seconds`); // eslint-disable-line
 
+	let player = await res.json();
 
-	return jsonres;
+	return player;
 }
 
 async function insertCards(jsonres) {
 
 	dbPromise.then((db) => {
 		debug('DB is Open');
-		debug('API KEY IS ', env.API_KEY);
 	});
 
 
@@ -110,7 +113,6 @@ router.get('/cards/:playertag', async (req, res, next) => {
 
 		dbPromise.then((db) => {
 			debug('DB is Open');
-			debug('API KEY IS ', env.API_KEY);
 		});
 
 

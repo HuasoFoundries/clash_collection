@@ -28,8 +28,7 @@
     "NODE_ENV": "development",
     "NEW_RELIC_ENABLED": false,
     "MORGAN": false,
-    "DEBUG": "CR:*",
-    "API_KEY": "<YOUR API KEY>"
+    "DEBUG": "CR:*"
   },
   "ext": "js json"
 }
