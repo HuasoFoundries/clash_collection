@@ -21,7 +21,7 @@ update_eslint:
 
 default: install
 .PHONY: default install run fix-permissions  tag version
-.PHONY: build docs battles
+.PHONY: build docs battles members
 
 
 install:
@@ -33,6 +33,9 @@ fix-permissions:
 
 battles:
 	node process_battles.js
+
+members:
+	node update_members.js
 
 
 run:

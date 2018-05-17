@@ -40,6 +40,79 @@ const Helpers = {
     return `${Math.round(used * 100) / 100} MB`;
   },
 
+  insertMembers: async function (members, logger) {
+
+
+    const table = new Helpers.pgp.helpers.TableName({
+      table: 'members',
+      schema: 'public'
+    });
+
+
+    const cs = new Helpers.pgp.helpers.ColumnSet([{
+        name: 'player_name',
+        prop: 'name'
+      },
+      {
+        name: 'player_tag',
+        prop: 'tag'
+      },
+      {
+        name: 'rank',
+        prop: 'rank',
+        def: null
+      },
+      {
+        name: 'previous_rank',
+        prop: 'previousRank',
+        def: null
+      },
+      {
+        name: 'role',
+        prop: 'role',
+        def: null
+      },
+      {
+        name: 'exp_level',
+        prop: 'expLevel',
+        def: null
+      },
+      {
+        name: 'trophies',
+        prop: 'trophies',
+        def: null
+      },
+      {
+        name: 'donations_given',
+        prop: 'donations',
+        def: null
+      },
+      {
+        name: 'donations_received',
+        prop: 'donationsReceived',
+        def: null
+      }
+    ], {
+      table
+    });
+    const insertQuery = Helpers.pgp.helpers.insert(members, cs) +
+      " ON CONFLICT (player_tag) DO UPDATE SET " +
+      cs.columns.map(x => {
+        var col = Helpers.pgp.as.name(x.name);
+        return col + ' = EXCLUDED.' + col;
+      }).join();
+
+    return Helpers.db.none(insertQuery)
+      .then(function () {
+
+        debug(`inserted ${members.length} records on members`);
+        return;
+      }).catch((err) => {
+        debug(`error inserting on ${chalk.yellow.bold('members')}`);
+        logger.error(err.stack);
+        return;
+      });
+  },
 
   insertBattles: async function (battles, tablename, logger) {
 
@@ -87,7 +160,7 @@ const Helpers = {
     return Helpers.db.none(insertQuery)
       .then(function () {
 
-        debug(`insertion complete on ${tablename}`);
+        debug(`inserted ${battles.length} records on ${tablename}`);
         return;
       }).catch((err) => {
         debug(`error inserting on ${chalk.yellow.bold(tablename)}`);
