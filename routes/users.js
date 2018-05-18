@@ -38,7 +38,7 @@ async function getResponse(playertag) {
 	const res = await fetch(`https://api.royaleapi.com/player/${playertag}`, {
 		method: 'GET',
 		headers: {
-			// 'cache-control': 'no-cache',
+			'cache-control': 'no-cache',
 			'auth': Config.ROYALE_AUTH // eslint-disable-line
 		},
 	});

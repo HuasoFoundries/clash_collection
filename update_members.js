@@ -27,6 +27,7 @@ async function getClanFromAPI() {
     const res = await fetch(`https://api.royaleapi.com/clan/${Config.CLAN_TAG}`, {
         method: 'GET',
         headers: {
+            'cache-control': 'no-cache',
             'auth': Config.ROYALE_AUTH // eslint-disable-line
         },
     });

@@ -28,6 +28,7 @@ async function getBattlesFromAPI() {
     const res = await fetch(`https://api.royaleapi.com/clan/${Config.CLAN_TAG}/battles?type=all&exclude=${excluded_fields.join(',')}`, {
         method: 'GET',
         headers: {
+            'cache-control': 'no-cache',
             'auth': Config.ROYALE_AUTH // eslint-disable-line
         },
     });
