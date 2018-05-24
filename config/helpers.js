@@ -44,6 +44,80 @@ const Helpers = {
     return Math.round((Date.now() - starting_time) / 100) / 10;
   },
 
+  insertWarlog: async function (wars, logger) {
+
+    const table = new Helpers.pgp.helpers.TableName({
+      table: 'war_log',
+      schema: 'public'
+    });
+
+    const cs = new Helpers.pgp.helpers.ColumnSet([{
+        name: 'id',
+        prop: 'id'
+      },
+      {
+        name: 'season',
+        prop: 'season'
+      },
+      {
+        name: 'guerra_numero',
+        prop: 'guerra_numero'
+      },
+      {
+        name: 'player_tag',
+        prop: 'player_tag'
+      },
+      {
+        name: 'player_name',
+        prop: 'player_name'
+      },
+      {
+        name: 'cards_earned',
+        prop: 'cards_earned',
+        def: 0
+      },
+      {
+        name: 'battles_played',
+        prop: 'battles_played',
+        def: 0
+      },
+      {
+        name: 'wins',
+        prop: 'wins',
+        def: 0
+      },
+      {
+        name: 'player_count',
+        prop: 'player_count',
+        def: 0
+      },
+      {
+        name: 'war_id',
+        prop: 'war_id'
+      }
+    ], {
+      table
+    });
+    const insertQuery = Helpers.pgp.helpers.insert(wars, cs) +
+      " ON CONFLICT (id) DO UPDATE SET " +
+      cs.columns.map(x => {
+        var col = Helpers.pgp.as.name(x.name);
+        return col + ' = EXCLUDED.' + col;
+      }).join();
+
+    return Helpers.db.none(insertQuery)
+      .then(function () {
+
+        logger.info(`inserted ${wars.length} records on war_log`);
+        return;
+      }).catch((err) => {
+        debug(`error inserting on ${chalk.yellow.bold('war_log')}`);
+        logger.error(err.stack);
+        return;
+      });
+  },
+
+
   insertMembers: async function (members, logger) {
 
 

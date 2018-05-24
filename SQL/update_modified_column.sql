@@ -16,3 +16,8 @@ BEFORE UPDATE ON
 public.members FOR EACH ROW EXECUTE PROCEDURE  update_modified_column();
 RESET ROLE;
 
+CREATE TRIGGER warlog_update_modtime
+BEFORE UPDATE ON 
+public.war_log FOR EACH ROW EXECUTE PROCEDURE  update_modified_column();
+RESET ROLE;
+

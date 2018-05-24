@@ -21,7 +21,7 @@ update_eslint:
 
 default: install
 .PHONY: default install run fix-permissions  tag version
-.PHONY: build docs battles members
+.PHONY: build docs battles members warlog
 
 
 install:
@@ -36,6 +36,9 @@ battles:
 
 members:
 	node update_members.js
+
+warlog:
+	node process_warlog.js
 
 
 run:

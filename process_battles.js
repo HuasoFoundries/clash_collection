@@ -25,7 +25,7 @@ async function getBattlesFromAPI() {
             debug('waiting for API response');
         }, 1000);
 
-    const res = await fetch(`https://api.royaleapi.com/clan/${Config.CLAN_TAG}/battles?type=all&exclude=${excluded_fields.join(',')}`, {
+    const res = await fetch(`https://api.royaleapi.com/clan/${Config.CLAN_TAG}/battles?type=war&exclude=${excluded_fields.join(',')}`, {
         method: 'GET',
         headers: {
             'cache-control': 'no-cache',
