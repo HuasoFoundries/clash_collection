@@ -15,3 +15,5 @@ CREATE TABLE public.members
 --ALTER TABLE public.war_day OWNER TO write_schema; 
 COMMENT ON TABLE public.members IS 'miembros del clan';
 ALTER TABLE ONLY public.members ADD CONSTRAINT members_pkey PRIMARY KEY (player_tag); 
+
+

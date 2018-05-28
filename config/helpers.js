@@ -60,10 +60,6 @@ const Helpers = {
         prop: 'season'
       },
       {
-        name: 'guerra_numero',
-        prop: 'guerra_numero'
-      },
-      {
         name: 'player_tag',
         prop: 'player_tag'
       },
@@ -92,8 +88,8 @@ const Helpers = {
         def: 0
       },
       {
-        name: 'war_id',
-        prop: 'war_id'
+        name: 'created_at',
+        prop: 'created_at'
       }
     ], {
       table
@@ -187,6 +183,111 @@ const Helpers = {
         return;
       }).catch((err) => {
         debug(`error inserting on ${chalk.yellow.bold('members')}`);
+        logger.error(err.stack);
+        return;
+      });
+  },
+
+
+  insertClanWars: async function (wars, logger) {
+    const table = new Helpers.pgp.helpers.TableName({
+      table: 'clan_wars',
+      schema: 'public'
+    });
+
+    const cs = new Helpers.pgp.helpers.ColumnSet([{
+        name: 'war_id',
+        prop: 'war_id'
+      },
+      {
+        name: 'place',
+        prop: 'place',
+        def: 0
+      },
+      {
+        name: 'player_count',
+        prop: 'player_count',
+        def: 0
+      },
+      {
+        name: 'season',
+        prop: 'season',
+        def: 0
+      },
+      {
+        name: 'created_at',
+        prop: 'created_at'
+      },
+    ], {
+      table
+    });
+    const insertQuery = Helpers.pgp.helpers.insert(wars, cs) +
+      " ON CONFLICT (war_id) DO UPDATE SET " +
+      cs.columns.map(x => {
+        var col = Helpers.pgp.as.name(x.name);
+        return col + ' = EXCLUDED.' + col;
+      }).join();
+
+    return Helpers.db.none(insertQuery)
+      .then(function () {
+
+        logger.info(`inserted ${wars.length} records on clan_wars`);
+        return;
+      }).catch((err) => {
+        debug(`error inserting on ${chalk.yellow.bold('clan_wars')}`);
+        logger.error(err.stack);
+        return;
+      });
+  },
+
+
+  insertMemberStats: async function (member_stats, logger) {
+
+
+    const table = new Helpers.pgp.helpers.TableName({
+      table: 'member_stats',
+      schema: 'public'
+    });
+
+
+    const cs = new Helpers.pgp.helpers.ColumnSet([{
+        name: 'id',
+        prop: 'id'
+      }, {
+        name: 'player_name',
+        prop: 'name'
+      },
+      {
+        name: 'player_tag',
+        prop: 'tag'
+      },
+      {
+        name: 'exp_level',
+        prop: 'expLevel',
+        def: null
+      },
+      {
+        name: 'trophies',
+        prop: 'trophies',
+        def: null
+      }
+    ], {
+      table
+    });
+    const insertQuery = Helpers.pgp.helpers.insert(member_stats, cs) +
+      " ON CONFLICT (id) DO UPDATE SET " +
+      cs.columns.map(x => {
+        var col = Helpers.pgp.as.name(x.name);
+        return col + ' = EXCLUDED.' + col;
+      }).join();
+
+    return Helpers.db.none(insertQuery)
+      .then(function () {
+
+        logger.info(`inserted ${member_stats.length} records on member_stats`);
+        return;
+      }).catch((err) => {
+        debug(`error inserting on ${chalk.yellow.bold('member_stats')}`);
         logger.error(err.stack);
         return;
       });

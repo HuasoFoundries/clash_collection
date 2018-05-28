@@ -58,6 +58,24 @@ async function Main() {
 
     await Helpers.insertMembers(clan.members, logger);
 
+    let member_stats = _.map(clan.members, (member) => {
+        member.id = (new Date()).toISOString().split('T')[0] + '_' + member.tag;
+        return _.omit(member, [
+            'rank',
+            'previousRank',
+            'donations',
+            'donationsReceived',
+            'role',
+            'donationsDelta',
+            'donationsPercent',
+        ]);
+    });
+
+    await Helpers.insertMemberStats(member_stats, logger);
+
+    await fs.writeFileAsync(`${__dirname}/dumps/member_stats.json`, JSON.stringify(member_stats, null, 4), 'utf-8');
+
+    logger.info(`Wrote ${chalk.red(member_stats.length)} member stats to ${chalk.green('member_stats.json')}`);
 
     let total_time = Helpers.getTimeInSeconds(starting_time);
     logger.info(`${chalk.green(this_script)}  complete in ${chalk.red(total_time)} seconds`);

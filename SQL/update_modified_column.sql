@@ -10,7 +10,7 @@ RESET ROLE;
 
 
 
--- SET ROLE write_schema;
+SET ROLE write_schema;
 CREATE TRIGGER members_update_modtime
 BEFORE UPDATE ON 
 public.members FOR EACH ROW EXECUTE PROCEDURE  update_modified_column();

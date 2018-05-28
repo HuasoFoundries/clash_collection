@@ -15,6 +15,7 @@ var _ = require('lodash'),
     logger = Helpers.createLogger(this_script),
     fetch = require('node-fetch'),
     starting_time = Date.now(),
+    argv = require('minimist')(process.argv.slice(2)),
     excluded_fields = ['arena', 'mode', 'challengeType', 'winCountBefore', 'deckType'];
 
 
@@ -37,7 +38,7 @@ async function getBattlesFromAPI() {
     debug(`${chalk.red(res.headers.get('x-ratelimit-remaining'))} ${chalk.green('remaining requests')} for the next ${chalk.red(time_until_reset)} seconds`); // eslint-disable-line
 
     clearInterval(interval);
-    const battles_raw = await res.json();
+    let battles_raw = await res.json();
 
 
     let total_time = Helpers.getTimeInSeconds(t_ini);
@@ -46,8 +47,16 @@ async function getBattlesFromAPI() {
 
 
     logger.info(`API answer complete in  ${chalk.red(total_time)} seconds`);
+    logger.info(`Wrote ${chalk.red(battles_raw.length)} battles to ${chalk.green('battles_raw.json')}`);
 
 
+    return battles_raw;
+}
+
+async function getBattlesFromFile() {
+    debug('getting battles from file');
+    const battles_raw = require(`${__dirname}/dumps/battles_raw.json`);
+    logger.info(`Read ${chalk.red(battles_raw.length)} battles from ${chalk.green('battles_raw.json')}`);
     return battles_raw;
 }
 
@@ -62,10 +71,12 @@ async function cleanBattles(battles_raw) {
         battle.opponent = _.map(battle.opponent, (player) => {
             return _.omit(player, ['deck', 'deckLink']);
         });
+        battle.date = new Date(1000 * battle.utcTime).toISOString().split('.')[0] + 'Z';
         return battle;
     }).value();
 
     await fs.writeFileAsync(`${__dirname}/dumps/war_battles.json`, JSON.stringify(war_battles, null, 4), 'utf-8');
+    logger.info(`Wrote ${chalk.red(war_battles.length)} battles to ${chalk.green('war_battles.json')}`);
 
     let clean_battles = _.map(war_battles, (battle) => {
         battle.team = _.map(battle.team, (player) => {
@@ -87,6 +98,7 @@ async function cleanBattles(battles_raw) {
 
 
     await fs.writeFileAsync(`${__dirname}/dumps/clean_battles.json`, JSON.stringify(clean_battles, null, 4), 'utf-8');
+    logger.info(`Wrote ${chalk.red(clean_battles.length)} battles to ${chalk.green('clean_battles.json')}`);
     return clean_battles;
 
 }
@@ -106,7 +118,7 @@ function processBattles(clean_battles) {
                 let dataObj = {
                     id: `${battle.utcTime}_${player.tag}`,
                     type: battle.type,
-                    date: new Date(1000 * battle.utcTime).toISOString().split('.')[0] + 'Z',
+                    date: battle.date,
                     player_tag: player.tag,
                     clan_tag: player.clan_tag,
                     player_name: player.name,
@@ -138,7 +150,7 @@ function processBattles(clean_battles) {
 }
 
 async function Main() {
-    const battles_raw = await getBattlesFromAPI();
+    const battles_raw = await (argv.from_file ? getBattlesFromFile() : getBattlesFromAPI());
 
     const clean_battles = await cleanBattles(battles_raw);
 
@@ -148,15 +160,24 @@ async function Main() {
         WarDay
     } = processBattles(clean_battles);
 
-    await Promise.all([
-        Helpers.insertBattles(WarDay, 'war_day', logger),
-        Helpers.insertBattles(CollectionDay, 'collection_day', logger),
+    let the_promises = [
+
         fs.writeFileAsync(`${__dirname}/dumps/WarDay.json`, JSON.stringify(WarDay, null, 4), 'utf-8'),
         fs.writeFileAsync(`${__dirname}/dumps/CollectionDay.json`, JSON.stringify(CollectionDay, null, 4), 'utf-8')
-    ]);
+    ];
 
-    logger.info(`wrote ${WarDay.length} battles to WarDay.json`);
-    logger.info(`wrote ${CollectionDay.length} battles to CollectionDay.json`);
+
+    if (!argv.from_file) {
+        the_promises = the_promises.concat([
+            Helpers.insertBattles(WarDay, 'war_day', logger),
+            Helpers.insertBattles(CollectionDay, 'collection_day', logger),
+        ]);
+    }
+
+    await Promise.all(the_promises);
+
+    logger.info(`wrote ${chalk.red(WarDay.length)} battles to WarDay.json`);
+    logger.info(`wrote ${chalk.red(CollectionDay.length)} battles to CollectionDay.json`);
 
     let total_time = Helpers.getTimeInSeconds(starting_time);
     logger.info(`${chalk.green(this_script)}  complete in ${chalk.red(total_time)} seconds`);
