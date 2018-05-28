@@ -127,8 +127,8 @@ async function Main() {
 
     if (!argv.from_file) {
         the_promises = the_promises.concat([
+            Helpers.insertClanWars(clean_wars, logger),
             Helpers.insertWarlog(clean_warlog, logger),
-            Helpers.insertClanWars(clean_wars, logger)
         ]);
     }
     await Promise.all(the_promises);

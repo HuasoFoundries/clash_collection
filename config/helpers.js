@@ -90,6 +90,11 @@ const Helpers = {
       {
         name: 'created_at',
         prop: 'created_at'
+      },
+      {
+        name: 'war_id',
+        prop: 'war_id',
+        def: null
       }
     ], {
       table
