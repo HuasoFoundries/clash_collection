@@ -121,6 +121,7 @@ const Helpers = {
 
   insertMembers: async function (members, logger) {
 
+    await Helpers.db.any('UPDATE public.members SET active=false');
 
     const table = new Helpers.pgp.helpers.TableName({
       table: 'members',
@@ -170,6 +171,10 @@ const Helpers = {
         name: 'donations_received',
         prop: 'donationsReceived',
         def: null
+      }, {
+        name: 'active',
+        prop: 'active',
+        def: false
       }
     ], {
       table

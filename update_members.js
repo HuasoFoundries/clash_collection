@@ -40,6 +40,7 @@ async function getClanFromAPI() {
 
     clan = _.omit(clan, ['clanChest', 'badge', 'location']);
     clan.members = _.map(clan.members, (member) => {
+        member.active = true;
         return _.omit(member, ['clanChestCrowns', 'arena']);
     });
 
