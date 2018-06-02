@@ -51,60 +51,38 @@ const Helpers = {
       schema: 'public'
     });
 
-    const cs = new Helpers.pgp.helpers.ColumnSet([{
-        name: 'id',
-        prop: 'id'
-      },
-      {
-        name: 'season',
-        prop: 'season'
-      },
-      {
-        name: 'player_tag',
-        prop: 'player_tag'
-      },
-      {
-        name: 'player_name',
-        prop: 'player_name'
-      },
+    const cs = new Helpers.pgp.helpers.ColumnSet([
+      'id',
+      'season',
+      'player_tag',
+      'player_name',
       {
         name: 'cards_earned',
-        prop: 'cards_earned',
         def: 0
       },
       {
         name: 'battles_played',
-        prop: 'battles_played',
         def: 0
       },
       {
         name: 'wins',
-        prop: 'wins',
         def: 0
       },
       {
         name: 'player_count',
-        prop: 'player_count',
         def: 0
       },
-      {
-        name: 'created_at',
-        prop: 'created_at'
-      },
+      'created_at',
       {
         name: 'war_id',
-        prop: 'war_id',
         def: null
       }
     ], {
       table
     });
     const insertQuery = Helpers.pgp.helpers.insert(wars, cs) +
-      " ON CONFLICT (id) DO UPDATE SET " +
-      cs.columns.map(x => {
-        var col = Helpers.pgp.as.name(x.name);
-        return col + ' = EXCLUDED.' + col;
-      }).join();
+      " ON CONFLICT(id) DO UPDATE SET " +
+          cs.assignColumns({from: 'EXCLUDED'});
 
     return Helpers.db.none(insertQuery)
       .then(function () {
@@ -139,7 +117,6 @@ const Helpers = {
       },
       {
         name: 'rank',
-        prop: 'rank',
         def: null
       },
       {
@@ -149,7 +126,6 @@ const Helpers = {
       },
       {
         name: 'role',
-        prop: 'role',
         def: null
       },
       {
@@ -159,7 +135,6 @@ const Helpers = {
       },
       {
         name: 'trophies',
-        prop: 'trophies',
         def: null
       },
       {
@@ -173,7 +148,6 @@ const Helpers = {
         def: null
       }, {
         name: 'active',
-        prop: 'active',
         def: false
       }
     ], {
@@ -181,10 +155,7 @@ const Helpers = {
     });
     const insertQuery = Helpers.pgp.helpers.insert(members, cs) +
       " ON CONFLICT (player_tag) DO UPDATE SET " +
-      cs.columns.map(x => {
-        var col = Helpers.pgp.as.name(x.name);
-        return col + ' = EXCLUDED.' + col;
-      }).join();
+          cs.assignColumns({from: 'EXCLUDED'});
 
     return Helpers.db.none(insertQuery)
       .then(function () {
@@ -205,38 +176,29 @@ const Helpers = {
       schema: 'public'
     });
 
-    const cs = new Helpers.pgp.helpers.ColumnSet([{
-        name: 'war_id',
-        prop: 'war_id'
-      },
+    const cs = new Helpers.pgp.helpers.ColumnSet([
+      'war_id',
       {
         name: 'place',
-        prop: 'place',
         def: 0
       },
       {
         name: 'player_count',
-        prop: 'player_count',
         def: 0
       },
       {
         name: 'season',
-        prop: 'season',
         def: 0
       },
       {
         name: 'created_at',
-        prop: 'created_at'
       },
     ], {
       table
     });
     const insertQuery = Helpers.pgp.helpers.insert(wars, cs) +
       " ON CONFLICT (war_id) DO UPDATE SET " +
-      cs.columns.map(x => {
-        var col = Helpers.pgp.as.name(x.name);
-        return col + ' = EXCLUDED.' + col;
-      }).join();
+          cs.assignColumns({from: 'EXCLUDED'});
 
     return Helpers.db.none(insertQuery)
       .then(function () {
@@ -312,39 +274,19 @@ const Helpers = {
     });
 
 
-    const cs = new Helpers.pgp.helpers.ColumnSet([{
-        name: 'id',
-        prop: 'id'
-      },
-      {
-        name: 'type',
-        prop: 'type'
-      },
-      {
-        name: 'date',
-        prop: 'date'
-      },
-      {
-        name: 'player_tag',
-        prop: 'player_tag'
-      },
-      {
-        name: 'clan_tag',
-        prop: 'clan_tag'
-      },
-      {
-        name: 'player_name',
-        prop: 'player_name'
-      }
+    const cs = new Helpers.pgp.helpers.ColumnSet([
+      'id',
+      'type',
+      'date',
+      'player_tag',
+      'clan_tag',
+      'player_name'
     ], {
       table
     });
     const insertQuery = Helpers.pgp.helpers.insert(battles, cs) +
-      " ON CONFLICT (id) DO UPDATE SET " +
-      cs.columns.map(x => {
-        var col = Helpers.pgp.as.name(x.name);
-        return col + ' = EXCLUDED.' + col;
-      }).join();
+      " ON CONFLICT(id) DO UPDATE SET " +
+          cs.assignColumns({from: 'EXCLUDED'});
 
     return Helpers.db.none(insertQuery)
       .then(function () {
