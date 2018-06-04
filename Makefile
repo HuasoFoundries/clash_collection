@@ -32,12 +32,18 @@ fix-permissions:
 	chown  ubuntu:ubuntu . -R
 
 battles:
+	${MAKE} members; \
+	wait; \
+	sleep 2; \
 	node process_battles.js
 
 members:
 	node update_members.js
 
 warlog:
+	${MAKE} members; \
+	wait; \
+	sleep 2; \
 	node process_warlog.js
 
 
