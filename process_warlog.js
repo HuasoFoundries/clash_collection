@@ -39,6 +39,11 @@ async function getWarsFromAPI() {
     clearInterval(interval);
     let wars_raw = await res.json();
 
+    if (res.status !== 200 || wars_raw.error === true) {
+        logger.error(wars_raw.message);
+        return null;
+    }
+
     wars_raw = _.map(wars_raw, (war) => {
         war.standings = _.map(war.standings, (standings) => {
             return standings.tag;
@@ -113,6 +118,11 @@ async function processWarlog(wars_raw) {
 
 async function Main() {
     const wars_raw = await (argv.from_file ? getWarsFromFile() : getWarsFromAPI());
+
+    if (wars_raw === null) {
+        debug('Invalid response from api');
+        return Helpers.exit();
+    }
 
     const {
         clean_wars,

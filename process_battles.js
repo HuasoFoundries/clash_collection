@@ -40,6 +40,10 @@ async function getBattlesFromAPI() {
     clearInterval(interval);
     let battles_raw = await res.json();
 
+    if (res.status !== 200 || battles_raw.error === true) {
+        logger.error(battles_raw.message);
+        return null;
+    }
 
     let total_time = Helpers.getTimeInSeconds(t_ini);
 
@@ -151,6 +155,12 @@ function processBattles(clean_battles) {
 
 async function Main() {
     const battles_raw = await (argv.from_file ? getBattlesFromFile() : getBattlesFromAPI());
+
+    if (battles_raw === null) {
+        debug('Invalid response from api');
+        return Helpers.exit();
+    }
+
 
     const clean_battles = await cleanBattles(battles_raw);
 

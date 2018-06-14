@@ -82,7 +82,9 @@ const Helpers = {
     });
     const insertQuery = Helpers.pgp.helpers.insert(wars, cs) +
       " ON CONFLICT(id) DO UPDATE SET " +
-          cs.assignColumns({from: 'EXCLUDED'});
+      cs.assignColumns({
+        from: 'EXCLUDED'
+      });
 
     return Helpers.db.none(insertQuery)
       .then(function () {
@@ -99,7 +101,11 @@ const Helpers = {
 
   insertMembers: async function (members, logger) {
 
-    await Helpers.db.any('UPDATE public.members SET active=false');
+    if (!members || !members.length) {
+      Helpers.logger.error('No members to insert');
+      return;
+    }
+
 
     const table = new Helpers.pgp.helpers.TableName({
       table: 'members',
@@ -155,7 +161,9 @@ const Helpers = {
     });
     const insertQuery = Helpers.pgp.helpers.insert(members, cs) +
       " ON CONFLICT (player_tag) DO UPDATE SET " +
-          cs.assignColumns({from: 'EXCLUDED'});
+      cs.assignColumns({
+        from: 'EXCLUDED'
+      });
 
     return Helpers.db.none(insertQuery)
       .then(function () {
@@ -198,7 +206,9 @@ const Helpers = {
     });
     const insertQuery = Helpers.pgp.helpers.insert(wars, cs) +
       " ON CONFLICT (war_id) DO UPDATE SET " +
-          cs.assignColumns({from: 'EXCLUDED'});
+      cs.assignColumns({
+        from: 'EXCLUDED'
+      });
 
     return Helpers.db.none(insertQuery)
       .then(function () {
@@ -286,7 +296,9 @@ const Helpers = {
     });
     const insertQuery = Helpers.pgp.helpers.insert(battles, cs) +
       " ON CONFLICT(id) DO UPDATE SET " +
-          cs.assignColumns({from: 'EXCLUDED'});
+      cs.assignColumns({
+        from: 'EXCLUDED'
+      });
 
     return Helpers.db.none(insertQuery)
       .then(function () {

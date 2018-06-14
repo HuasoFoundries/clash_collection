@@ -24,38 +24,61 @@ async function getClanFromAPI() {
             debug('waiting for API response');
         }, 500);
 
-    const res = await fetch(`https://api.royaleapi.com/clan/${Config.CLAN_TAG}`, {
-        method: 'GET',
-        headers: {
-            'cache-control': 'no-cache',
-            'auth': Config.ROYALE_AUTH // eslint-disable-line
-        },
-    });
-    let time_until_reset = Math.abs(Helpers.getTimeInSeconds(res.headers.get('x-ratelimit-reset')));
-    debug(`API ${chalk.green('request limit')} is ${chalk.red(res.headers.get('x-ratelimit-limit'))} requests/second`);
-    debug(`${chalk.red(res.headers.get('x-ratelimit-remaining'))} ${chalk.green('remaining requests')} for the next ${chalk.red(time_until_reset)} seconds`); // eslint-disable-line
+    try {
+        const res = await fetch(`https://api.royaleapi.com/clan/${Config.CLAN_TAG}`, {
+            method: 'GET',
+            headers: {
+                'cache-control': 'no-cache',
+                'auth': Config.ROYALE_AUTH // eslint-disable-line
+            },
+        });
+        let time_until_reset = Math.abs(Helpers.getTimeInSeconds(res.headers.get('x-ratelimit-reset')));
+        debug(`API ${chalk.green('request limit')} is ${chalk.red(res.headers.get('x-ratelimit-limit'))} requests/second`);
+        debug(`${chalk.red(res.headers.get('x-ratelimit-remaining'))} ${chalk.green('remaining requests')} for the next ${chalk.red(time_until_reset)} seconds`); // eslint-disable-line
 
 
-    let clan = await res.json();
+        let clan = await res.json();
 
-    clan = _.omit(clan, ['clanChest', 'badge', 'location']);
-    clan.members = _.map(clan.members, (member) => {
-        member.active = true;
-        return _.omit(member, ['clanChestCrowns', 'arena']);
-    });
+        if (res.status !== 200 || clan.error === true) {
+            logger.error(clan.message);
+            return null;
+        }
 
-    await fs.writeFileAsync(`${__dirname}/dumps/clan.json`, JSON.stringify(clan, null, 4), 'utf-8');
+        clan = _.omit(clan, ['clanChest', 'badge', 'location']);
+        clan.members = _.map(clan.members, (member) => {
+            member.active = true;
+            return _.omit(member, ['clanChestCrowns', 'arena']);
+        });
 
-    await fs.writeFileAsync(`${__dirname}/dumps/members.json`, JSON.stringify(clan.members, null, 4), 'utf-8');
+        await fs.writeFileAsync(`${__dirname}/dumps/clan.json`, JSON.stringify(clan, null, 4), 'utf-8');
 
-    let total_time = Helpers.getTimeInSeconds(t_ini);
-    logger.info(`API answer complete in  ${chalk.red(total_time)} seconds`);
-    clearInterval(interval);
-    return clan;
+        await fs.writeFileAsync(`${__dirname}/dumps/members.json`, JSON.stringify(clan.members, null, 4), 'utf-8');
+
+        let total_time = Helpers.getTimeInSeconds(t_ini);
+        logger.info(`API answer complete in  ${chalk.red(total_time)} seconds`);
+        clearInterval(interval);
+        return clan;
+    } catch (err) {
+        logger.error(err);
+        return null;
+    }
 }
 
 async function Main() {
     const clan = await getClanFromAPI();
+
+    if (clan === null) {
+        debug('Invalid response from api');
+        return Helpers.exit();
+    }
+
+    let members_in_db = await Helpers.db.any('SELECT player_tag from public.members');
+    let all_members = _.map(members_in_db, member => member.player_tag);
+    let active_members = _.map(clan.members, member => member.tag);
+    let inactive_members = _.difference(all_members, active_members).join('|');
+
+    await Helpers.db.any(`UPDATE public.members SET active=false WHERE player_tag = ANY(string_to_array($1,'|'))`, [inactive_members]);
+
 
     await Helpers.insertMembers(clan.members, logger);
 
